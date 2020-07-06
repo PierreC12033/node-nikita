@@ -1,6 +1,5 @@
 
 registry = require './registry'
-error = require './utils/error'
 
 module.exports =
   '': handler: (->)

@@ -6,7 +6,7 @@ return unless tags.api
 
 describe 'utils.stats', ->
 
-  describe 'type', ->
+  describe 'isDirectory', ->
 
     it 'directory is true', ->
       mode = parseInt '40755', 8
@@ -16,7 +16,7 @@ describe 'utils.stats', ->
       mode = parseInt '100644', 8
       utils.stats.isDirectory(mode).should.be.false()
       
-  describe 'type', ->
+  describe 'isFile', ->
 
     it 'file is true', ->
       mode = parseInt '100644', 8
@@ -31,3 +31,10 @@ describe 'utils.stats', ->
     it 'file is false', ->
       utils.stats.type(parseInt('40755', 8)).should.eql 'Directory'
       utils.stats.type(parseInt('100644', 8)).should.eql 'File'
+      
+  describe 'new', ->
+
+    it 'file is false', ->
+      utils.stats.new({
+        mode: parseInt '100644', 8
+      }).isFile().should.be.true()
