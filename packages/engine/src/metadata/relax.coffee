@@ -17,7 +17,7 @@ module.exports = ->
       unless typeof action.metadata.relax is 'boolean' or
       action.metadata.relax instanceof Array
         throw error 'METADATA_RELAX_INVALID_VALUE', [
-          "configuration `relax` expect a boolean, string, array or regexp",
+          "configuration `relax` expects a boolean, string, array or regexp",
           "value, got #{JSON.stringify action.metadata.relax}."
         ]
       return handler unless action.metadata.relax

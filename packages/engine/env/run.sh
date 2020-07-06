@@ -6,6 +6,3 @@ docker-compose up --abort-on-container-exit
 
 cd $HOME/sudo
 docker-compose up --abort-on-container-exit
-
-cd $HOME/ubuntu
-docker-compose up --abort-on-container-exit
