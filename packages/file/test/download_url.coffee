@@ -81,15 +81,16 @@ describe 'file.download url', ->
       source = 'http://localhost:12345'
       target = "#{tmpdir}/download"
       cache = "#{tmpdir}/cache_file"
-      nikita(cache_file: cache)@file.download
-        ssh: ssh
-        source: source
-        target: target
-      .should.be.resolvedWith status: true
-      @fs.assert
-        ssh: null
-        target: cache
-        content: 'okay'
+      nikita(cache_file: cache) ->
+        @file.download
+          ssh: ssh
+          source: source
+          target: target
+        .should.be.resolvedWith status: true
+        @fs.assert
+          ssh: null
+          target: cache
+          content: 'okay'
 
     they 'cache dir', ({ssh}) ->
       @timeout 100000

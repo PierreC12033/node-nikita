@@ -10,7 +10,7 @@ describe 'file.download file', ->
   
   describe 'source', ->
 
-    they.only 'with file protocol', ({ssh}) ->
+    they 'with file protocol', ({ssh}) ->
       nikita
         ssh: ssh
         tmpdir: true

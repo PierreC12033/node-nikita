@@ -88,6 +88,7 @@ require('nikita')
             target: config.target
             encoding: 'utf8'
           config.content = merge JSON.parse(data), config.content
+          return
         catch err
           throw err if err.code isnt 'NIKITA_FS_CRS_TARGET_ENOENT'
       if config.source
