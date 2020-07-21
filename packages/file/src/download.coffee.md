@@ -152,16 +152,13 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       # Shortcircuit accelerator:
       # If we know the source signature and if the target file exists
       # we compare it with the target file signature and stop if they match
-      {status} = await @call
-        shy: true
-      , ->
+      {status} = await @call shy: true, ->
         return true unless typeof source_hash is 'string'
         log message: "Shortcircuit check if provided hash match target", level: 'WARN', module: 'nikita/lib/file/download'
         try
-          hash = await @file.hash config.target, algo: algo
-          targetHash = if hash?.hash then hash.hash else false
-          source_hash is targetHash
-        catch
+          {hash} = await @fs.hash config.target, algo: algo
+          source_hash is hash
+        catch err
           if not err.code is 'NIKITA_FS_CRS_TARGET_ENOENT'
             throw err
       return status unless status
@@ -169,7 +166,7 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       # Download the file and place it inside local cache
       # Overwrite the config.source and source_url properties to make them
       # look like a local file instead of an HTTP URL
-      console.log await @file.cache
+      @file.cache
         if: config.cache
         # Local file must be readable by the current process
         ssh: false
@@ -182,20 +179,20 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
         md5: config.md5
         proxy: config.proxy
         location: config.location
-      , (err, {status, target}) ->
-        throw err if err
-        config.source = target if config.cache
-        source_url = url.parse config.source
+        target: config.target
+      config.source = config.target if config.cache
+      source_url = url.parse config.source
       # TODO
       # The current implementation seems inefficient. By modifying stageDestination,
       # we download the file, check the hash, and again treat it the HTTP URL 
       # as a local file and check hash again.
-      @fs.stat target: config.target, relax: true, (err, {stats}) ->
-        throw err if err and err.code isnt 'ENOENT'
-        if not err and misc.stats.isDirectory stats.mode
-          log message: "Destination is a directory", level: 'DEBUG', module: 'nikita/lib/file/download'
-          config.target = path.join config.target, path.basename config.source
-        stageDestination = "#{config.target}.#{Date.now()}#{Math.round(Math.random()*1000)}"
+      {stats} = await @fs.base.stat
+        target: config.target
+        relax: 'NIKITA_FS_STAT_TARGET_ENOENT'
+      if utils.stats.isDirectory stats?.mode
+        log message: "Destination is a directory", level: 'DEBUG', module: 'nikita/lib/file/download'
+        config.target = path.join config.target, path.basename config.source
+      stageDestination = "#{config.target}.#{Date.now()}#{Math.round(Math.random()*1000)}"
       @call
         if: -> source_url.protocol in protocols_http
       , ->
@@ -206,7 +203,7 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
           shy: true
           target: path.dirname stageDestination
         # Download the file
-        @system.execute
+        @execute
           cmd: [
             'curl'
             '--fail' if config.fail
@@ -220,24 +217,25 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
           ].join ' '
           shy: true
         hash_source = hash_target = null
-        @file.hash stageDestination, algo: algo, (err, {hash}) ->
-          throw err if err
-          # Hash validation
-          # Probably not the best to check hash, it only applies to HTTP for now
-          if typeof source_hash is 'string' and source_hash isnt hash
-            throw Error "Invalid downloaded checksum, found '#{hash}' instead of '#{source_hash}'" if source_hash isnt hash
-          hash_source = hash
-        @file.hash config.target, algo: algo, relax: true, (err, {hash}) ->
-          throw err if err and err.code isnt 'ENOENT'
-          hash_target = hash
-        @call ({}, callback)->
+        {hash} = await @fs.hash stageDestination, algo: algo
+        # Hash validation
+        # Probably not the best to check hash, it only applies to HTTP for now
+        if typeof source_hash is 'string' and source_hash isnt hash
+          throw Error "Invalid downloaded checksum, found '#{hash}' instead of '#{source_hash}'" if source_hash isnt hash
+        hash_source = hash
+        {hash} = await @fs.hash
+          target: config.target
+          algo: algo
+          relax: 'NIKITA_FS_STAT_TARGET_ENOENT'
+        hash_target = hash
+        @call ->
           match = hash_source is hash_target
           log if match
           then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
           else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
-          callback null, not match
-        @system.remove
-          unless: -> @status -1
+          not match
+        @fs.remove
+          # unless: -> @status -1
           shy: true
           target: stageDestination
       @call
@@ -245,10 +243,10 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       , ->
         log message: "File Download without ssh (with or without cache)", level: 'DEBUG', module: 'nikita/lib/file/download'
         hash_source = hash_target = null
-        @file.hash target: config.source, algo: algo, (err, {hash}) ->
+        @fs.hash target: config.source, algo: algo, (err, {hash}) ->
           throw err if err
           hash_source = hash
-        @file.hash target: config.target, algo: algo, if_exists: true, (err, {hash}) ->
+        @fs.hash target: config.target, algo: algo, if_exists: true, (err, {hash}) ->
           throw err if err
           hash_target = hash
         @call ({}, callback)->
@@ -270,10 +268,10 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       , ->
         log message: "File Download with ssh (with or without cache)", level: 'DEBUG', module: 'nikita/lib/file/download'
         hash_source = hash_target = null
-        @file.hash target: config.source, algo: algo, ssh: false, sudo: false, (err, {hash}) ->
+        @fs.hash target: config.source, algo: algo, ssh: false, sudo: false, (err, {hash}) ->
           throw err if err
           hash_source = hash
-        @file.hash target: config.target, algo: algo, if_exists: true, (err, {hash}) ->
+        @fs.hash target: config.target, algo: algo, if_exists: true, (err, {hash}) ->
           throw err if err
           hash_target = hash
         @call ({}, callback)->

@@ -20,7 +20,7 @@ describe 'file.download url', ->
     server.close()
     server.on 'close', next
 
-  they 'download without cache and md5', ({ssh}) ->
+  they.only 'download without cache and md5', ({ssh}) ->
     @timeout 100000
     # Download a non existing file
     nikita
