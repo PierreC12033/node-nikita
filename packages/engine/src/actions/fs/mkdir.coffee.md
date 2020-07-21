@@ -1,5 +1,5 @@
 
-# `nikita.system.mkdir`
+# `nikita.fs.mkdir`
 
 Recursively create a directory. The behavior is similar to the Unix command
 `mkdir -p`. It supports an alternative syntax where config is simply the path
