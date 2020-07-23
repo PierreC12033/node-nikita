@@ -1,5 +1,5 @@
 
-# Yaml
+# Ini
 
     module.exports =
       # Remove undefined and null values

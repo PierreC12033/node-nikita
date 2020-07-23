@@ -7,7 +7,7 @@ return unless tags.posix
 
 describe 'file.yaml', ->
 
-  they.only 'stringify an object', ({ssh}) ->
+  they 'stringify an object', ({ssh}) ->
     nikita
       ssh: ssh
       tmpdir: true
@@ -37,7 +37,7 @@ describe 'file.yaml', ->
         target: "#{tmpdir}/user.yml"
         content: 'user:\n  preference:\n    language: french\n'
 
-  they 'discard undefined and null', ({ssh}) ->
+  they.only 'discard undefined and null', ({ssh}) ->
     nikita
       ssh: ssh
       tmpdir: true

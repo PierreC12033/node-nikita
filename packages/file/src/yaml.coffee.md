@@ -150,22 +150,24 @@ require('nikita')
     handler = ({config, log, metadata}) ->
       log message: "Entering file.yaml", level: 'DEBUG', module: 'nikita/lib/file/yaml'
       # Start real work
-      data = await @fs.base.readFile
-        if: config.merge
-        target: config.target
-        encoding: 'utf8'
-        relax: 'NIKITA_FS_CRS_TARGET_ENOENT'
-      if data
-        yaml.safeLoadAll data, (data) ->
-          data = utils.yaml.clean data, config.content, true
-          config.content = utils.yaml.merge data, config.content
-      @call ->
-        if config.clean
-          log message: "Clean content", level: 'INFO', module: 'nikita/lib/file/yaml'
-          utils.ini.clean config.content
-        log message: "Serialize content", level: 'DEBUG', module: 'nikita/lib/file/yaml'
-        config.content = yaml.safeDump config.content, noRefs:true, lineWidth: config.line_width
-        @file config, header: null
+      if config.merge
+        try
+          data = await @fs.base.readFile
+            target: config.target
+            encoding: 'utf8'
+          if data
+            yaml.safeLoadAll data, (data) ->
+              data = utils.yaml.clean data, config.content, true
+              config.content = utils.yaml.merge data, config.content
+        catch err
+          if not err.code is 'NIKITA_FS_CRS_TARGET_ENOENT'
+            throw err
+      if config.clean
+        log message: "Clean content", level: 'INFO', module: 'nikita/lib/file/yaml'
+        utils.ini.clean config.content
+      log message: "Serialize content", level: 'DEBUG', module: 'nikita/lib/file/yaml'
+      config.content = yaml.safeDump config.content, noRefs:true, lineWidth: config.line_width
+      @file config, header: null
 
 ## Exports
 
