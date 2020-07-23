@@ -243,19 +243,17 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       , ->
         log message: "File Download without ssh (with or without cache)", level: 'DEBUG', module: 'nikita/lib/file/download'
         hash_source = hash_target = null
-        @fs.hash target: config.source, algo: algo, (err, {hash}) ->
-          throw err if err
-          hash_source = hash
-        @fs.hash target: config.target, algo: algo, if_exists: true, (err, {hash}) ->
-          throw err if err
-          hash_target = hash
-        @call ({}, callback)->
+        {hash} = await @fs.hash target: config.source, algo: algo
+        hash_source = hash
+        {hash} = await @fs.hash target: config.target, algo: algo, if_exists: true
+        hash_target = hash
+        @call ->
           match = hash_source is hash_target
           log if match
           then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
           else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
-          callback null, not match
-        @fs.mkdir
+          not match
+        @fs.base.mkdir
           if: -> @status -1
           shy: true
           target: path.dirname stageDestination
