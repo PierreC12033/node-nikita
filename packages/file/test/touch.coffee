@@ -48,15 +48,9 @@ describe 'file.touch', ->
       @fs.assert
         target: "#{tmpdir}/file_1"
         content: ''
-<<<<<<< HEAD
       @fs.assert
         target: "#{tmpdir}/file_2"
         content: ''
-=======
-      # @fs.assert
-      #   target: "#{tmpdir}/file_2"
-      #   content: ''
->>>>>>> 7eb10f9a... file: touch
 
   they 'an existing file', ({ssh}) ->
     nikita
