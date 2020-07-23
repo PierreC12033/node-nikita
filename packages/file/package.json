@@ -49,13 +49,9 @@
   ],
   "dependencies": {
     "diff": "^4.0.2",
-<<<<<<< HEAD
+    "js-yaml": "^3.14.0",
     "mixme": "^0.3.5",
     "season": "^6.0.2"
-=======
-    "js-yaml": "^3.14.0",
-    "mixme": "^0.3.5"
->>>>>>> file: yaml and utils
   },
   "devDependencies": {
     "@babel/core": "^7.9.6",
