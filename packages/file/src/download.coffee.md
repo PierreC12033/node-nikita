@@ -28,50 +28,6 @@ provided.
 If cache is used, signature validation is always active, and md5sum is automatically
 calculated if neither sha256, sh1 nor md5 is provided.
 
-## Options
-
-* `cache` (boolean, optional)   
-  Activate the cache, default to true if either "cache_dir" or "cache_file" is
-  activated.
-* `cache_dir` (string, optional)   
-  Path of the cache directory.
-* `cache_file` (string|boolean, optional)   
-  Cache the file on the executing machine, equivalent to cache unless an ssh
-  connection is provided. If a string is provided, it will be the cache path.
-  By default: basename of source
-* `cookies` (array)   
-  Extra cookies to include in the request when sending HTTP to a server.
-* `force` (boolean)   
-  Overwrite target file if it exists.
-* `force_cache` (boolean)   
-  Force cache overwrite if it exists
-* `gid` (number|string, optional)   
-  Group name or id who owns the target file.
-* `http_headers` (array)   
-  Extra  header  to include in the request when sending HTTP to a server.
-* `location` (boolean)   
-  If the server reports that the requested page has moved to a different
-  location (indicated with a Location: header and a 3XX response code), this
-  option will make curl redo the request on the new place.
-* `md5` (MD5 Hash)   
-  Hash of the file using MD5. Used to check integrity
-* `mode` (octal mode)   
-  Permissions of the target. If specified, nikita will chmod after download.
-* `proxy` (string)   
-  Use the specified HTTP proxy. If the port number is not specified, it is
-  assumed at port 1080. See curl(1) man page.
-* `sha1` (SHA-1 Hash)   
-  Hash of the file using SHA-1. Used to check integrity.
-* `sha256` (SHA-256 Hash)   
-  Hash of the file using SHA-256. Used to check integrity.
-* `source` (path)   
-  File, HTTP URL, GIT repository. File is the default protocol if source
-  is provided without any.
-* `target` (path)   
-  Path where to write the destination file.
-* `uid` (number|string, optional)   
-  User name or id who owns the target file.
-
 ## Callback parameters
 
 * `err` (Error)   
@@ -115,6 +71,112 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       throw Error "Missing target: #{config.target}" unless config.target
       config.source = config.source.substr 7 if /^file:\/\//.test config.source
       stageDestination = null
+
+## Schema
+
+    schema =
+      type: 'object'
+      properties:
+        'cache':
+          type: 'boolean'
+          default: false
+          description: """
+          Activate the cache, default to true if either "cache_dir" or "cache_file" is
+          activated.
+          """
+        'cache_dir':
+          type: 'string'
+          description: """
+          Path of the cache directory.
+          """
+        'cache_file':
+          oneOf:[{type: 'string'}, {typeof: 'boolean'}]
+          description: """
+          Cache the file on the executing machine, equivalent to cache unless an ssh
+          connection is provided. If a string is provided, it will be the cache path.
+          By default: basename of source
+          """
+        'cookies':
+          type: 'array', items: type: 'string'
+          description: """
+          Extra cookies  to include in the request when sending HTTP to a server.
+          """
+        'force':
+          type: 'boolean'
+          description: """
+          Overwrite the target file if it exists.
+          """
+        'force_cache':
+          type: 'boolean'
+          description: """
+          Force cache overwrite if it exists
+          """
+        'gid':
+          oneOf: [{type: 'string'}, {type: 'number'}]
+          description: """
+          File group name or group id.
+          """
+        'http_headers':
+          type: 'array', items: type: 'string'
+          description: """
+          Extra header to include in the request when sending HTTP to a server.
+          """
+        'location':
+          type: 'boolean'
+          description: """
+          If the server reports that the requested page has moved to a different
+          location (indicated with a Location: header and a 3XX response code), this
+          option will make curl redo the request on the new place.
+          """
+        'md5':
+          oneOf:[{type: 'string'}, {typeof: 'boolean'}]
+          default: false
+          description: """
+          Validate uploaded file with md5 checksum (only for binary upload for now),
+          may be the string checksum or will be deduced from source if "true".
+          """
+        'mode':
+          type: 'integer'
+          description: """
+          File mode (permission and sticky bits), default to `0o0644`, in the
+          form of `{mode: 0o0744}` or `{mode: "0744"}`.
+          """
+        'proxy':
+          type: 'string'
+          description: """
+          Use the specified HTTP proxy. If the port number is not specified, it is
+          assumed at port 1080. See curl(1) man page.
+          """
+        'sha1':
+          default: false
+          oneOf:[{type: 'string'}, {typeof: 'boolean'}]
+          description: """
+          Validate uploaded file with sha1 checksum (only for binary upload for now),
+          may be the string checksum or will be deduced from source if "true".
+          """
+        'sha256':
+          default: false
+          oneOf:[{type: 'string'}, {typeof: 'boolean'}]
+          description: """
+          Validate uploaded file with sha1 checksum (only for binary upload for now),
+          may be the string checksum or will be deduced from source if "true".
+          """
+        'source':
+          type: 'string'
+          description: """
+          File, HTTP URL, GIT repository. File is the default protocol if source
+          is provided without any.
+          """
+        'target':
+          oneOf: [{type: 'string'}, {typeof: 'function'}]
+          description: """
+          File path where to write content to. Pass the content.
+          """
+        'uid':
+          oneOf: [{type: 'string'}, {type: 'number'}]
+          description: """
+          File user name or user id.
+          """
 
 ## Handler
 
@@ -314,7 +376,7 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       handler: handler
       hooks:
         on_action: on_action
-      # schema: schema
+      schema: schema
 
 ## Module Dependencies
 
