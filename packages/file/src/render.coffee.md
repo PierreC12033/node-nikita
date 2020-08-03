@@ -2,15 +2,9 @@
 # `nikita.file.render`
 
 Render a template file. More templating engine could be added on demand. The
-<<<<<<< HEAD
 following templating engines are integrated:
 
 * [Handlebars](https://handlebarsjs.com/)
-=======
-following templating engines are l integrated:     
-
-* [Mustache](https://mustache.github.io/)   
->>>>>>> cb8b9aad... file: cache and cson
 
 If target is a callback, it will be called with the generated content as
 its first argument.   

@@ -55,8 +55,8 @@ used for comparaison.
 
 ## Handler
 
-    handler = ({config, metadata}) ->
-      # @log message: "Entering file.hash", level: 'DEBUG', module: 'nikita/lib/file/hash'
+    handler = ({config, metadata, log}) ->
+      log message: "Entering file.hash", level: 'DEBUG', module: 'nikita/lib/file/hash'
       {stats} = if config.stats
       then config.stats
       else await @fs.base.stat config.target
@@ -66,7 +66,7 @@ used for comparaison.
       try
       # Target is a directory
         if utils.stats.isDirectory stats.mode
-          {files} = await @fs.glob  "#{config.target}/**", dot: true
+          {files} = await @fs.glob "#{config.target}/**", dot: true
           {stdout} = await @execute
             cmd: [
               'command -v openssl >/dev/null || exit 2'
