@@ -100,7 +100,7 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
           type: 'array', items: type: 'string'
           description: """
           Extra cookies  to include in the request when sending HTTP to a server.
-          """
+          """ 
         'force':
           type: 'boolean'
           description: """
@@ -214,50 +214,48 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
       # Shortcircuit accelerator:
       # If we know the source signature and if the target file exists
       # we compare it with the target file signature and stop if they match
-      {status} = await @call shy: true, ->
-        return true unless typeof source_hash is 'string'
-        log message: "Shortcircuit check if provided hash match target", level: 'WARN', module: 'nikita/lib/file/download'
-        try
-          {hash} = await @fs.hash config.target, algo: algo
-          source_hash is hash
-        catch err
-          if not err.code is 'NIKITA_FS_CRS_TARGET_ENOENT'
-            throw err
-      return status unless status
+      # {status} = await @call shy: true, ->
+      #   return true unless typeof source_hash is 'string'
+      #   log message: "Shortcircuit check if provided hash match target", level: 'WARN', module: 'nikita/lib/file/download'
+      #   try
+      #     {hash} = await @fs.hash config.target, algo: algo
+      #     source_hash is hash
+      #   catch err
+      #     if not err.code is 'NIKITA_FS_CRS_TARGET_ENOENT'
+      #       throw err
+      # return status unless status
       log message: "Destination with valid signature, download aborted", level: 'INFO', module: 'nikita/lib/file/download'
       # Download the file and place it inside local cache
       # Overwrite the config.source and source_url properties to make them
       # look like a local file instead of an HTTP URL
-      @file.cache
-        if: config.cache
-        # Local file must be readable by the current process
-        ssh: false
-        sudo: false
-        source: config.source
-        cache_dir: config.cache_dir
-        cache_file: config.cache_file
-        http_headers: config.http_headers
-        cookies: config.cookies
-        md5: config.md5
-        proxy: config.proxy
-        location: config.location
-        target: config.target
-      config.source = config.target if config.cache
-      source_url = url.parse config.source
+      if config.cache
+        @file.cache
+          # Local file must be readable by the current process
+          ssh: false
+          sudo: false
+          source: config.source
+          cache_dir: config.cache_dir
+          cache_file: config.cache_file
+          http_headers: config.http_headers
+          cookies: config.cookies
+          md5: config.md5
+          proxy: config.proxy
+          location: config.location
+        source_url = url.parse config.source
       # TODO
       # The current implementation seems inefficient. By modifying stageDestination,
       # we download the file, check the hash, and again treat it the HTTP URL 
       # as a local file and check hash again.
-      {stats} = await @fs.base.stat
-        target: config.target
-        relax: 'NIKITA_FS_STAT_TARGET_ENOENT'
-      if utils.stats.isDirectory stats?.mode
-        log message: "Destination is a directory", level: 'DEBUG', module: 'nikita/lib/file/download'
-        config.target = path.join config.target, path.basename config.source
+      try
+        {stats} = await @fs.base.stat
+          target: config.target
+        if utils.stats.isDirectory stats?.mode
+          log message: "Destination is a directory", level: 'DEBUG', module: 'nikita/lib/file/download'
+          config.target = path.join config.target, path.basename config.source
+      catch err
+        throw err if err.code isnt 'NIKITA_FS_STAT_TARGET_ENOENT'
       stageDestination = "#{config.target}.#{Date.now()}#{Math.round(Math.random()*1000)}"
-      @call
-        if: -> source_url.protocol in protocols_http
-      , ->
+      if source_url.protocol in protocols_http
         log message: "HTTP Download", level: 'DEBUG', module: 'nikita/lib/file/download'
         log message: "Download file from url using curl", level: 'INFO', module: 'nikita/lib/file/download'
         # Ensure target directory exists
@@ -285,90 +283,82 @@ It would be nice to support alternatives sources such as FTP(S) or SFTP.
         if typeof source_hash is 'string' and source_hash isnt hash
           throw Error "Invalid downloaded checksum, found '#{hash}' instead of '#{source_hash}'" if source_hash isnt hash
         hash_source = hash
-        {hash} = await @fs.hash
-          target: config.target
-          algo: algo
-          relax: 'NIKITA_FS_STAT_TARGET_ENOENT'
-        hash_target = hash
-        @call ->
-          match = hash_source is hash_target
-          log if match
-          then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
-          else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
-          not match
-        @fs.remove
-          # unless: -> @status -1
-          shy: true
-          target: stageDestination
-      @call
-        if: -> source_url.protocol not in protocols_http and not ssh
-      , ->
+        exists = await @fs.base.exists target: config.target
+        if exists
+          {hash} = await @fs.hash target: config.target, algo: algo
+          hash_target = hash
+        match = hash_source is hash_target
+        log if match
+        then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
+        else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
+        status = not match
+        unless status
+          @fs.remove
+            shy: true
+            target: stageDestination
+      if source_url.protocol not in protocols_http and not ssh
         log message: "File Download without ssh (with or without cache)", level: 'DEBUG', module: 'nikita/lib/file/download'
         hash_source = hash_target = null
         {hash} = await @fs.hash target: config.source, algo: algo
         hash_source = hash
-        {hash} = await @fs.hash target: config.target, algo: algo, if_exists: true
-        hash_target = hash
-        @call ->
-          match = hash_source is hash_target
-          log if match
-          then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
-          else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
-          not match
-        @fs.base.mkdir
-          if: -> @status -1
-          shy: true
-          target: path.dirname stageDestination
-        @fs.copy
-          if: -> @status -2
-          source: config.source
-          target: stageDestination
-      @call
-        if: -> source_url.protocol not in protocols_http and ssh
-      , ->
+        exists = await @fs.base.exists target: config.target
+        if exists
+          {hash} = await @fs.hash target: config.target, algo: algo
+          hash_target = hash
+        match = hash_source is hash_target
+        log if match
+        then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
+        else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
+        status = not match
+        if status
+          @fs.mkdir
+            shy: true
+            target: path.dirname stageDestination
+          @fs.copy
+            source: config.source
+            target: stageDestination
+      if source_url.protocol not in protocols_http and ssh
         log message: "File Download with ssh (with or without cache)", level: 'DEBUG', module: 'nikita/lib/file/download'
         hash_source = hash_target = null
-        @fs.hash target: config.source, algo: algo, ssh: false, sudo: false, (err, {hash}) ->
-          throw err if err
-          hash_source = hash
-        @fs.hash target: config.target, algo: algo, if_exists: true, (err, {hash}) ->
-          throw err if err
+        {hash} = await @fs.hash target: config.source, algo: algo, ssh: false, sudo: false
+        hash_source = hash
+        exists = await @fs.base.exists target: config.target
+        if exists
+          {hash} = await @fs.hash target: config.target, algo: algo
           hash_target = hash
-        @call ({}, callback)->
-          match = hash_source is hash_target
-          log if match
-          then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
-          else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
-          callback null, not match
-        @fs.mkdir
-          if: -> @status -1
-          shy: true
-          target: path.dirname stageDestination
-        @fs.createWriteStream
-          if: -> @status -2
-          target: stageDestination
-          stream: (ws) ->
-            rs = fs.createReadStream config.source
-            rs.pipe ws
-        , (err) ->
-          log if err
-          then message: "Downloaded local source #{JSON.stringify config.source} to remote target #{JSON.stringify stageDestination} failed", level: 'ERROR', module: 'nikita/lib/file/download'
-          else message: "Downloaded local source #{JSON.stringify config.source} to remote target #{JSON.stringify stageDestination}", level: 'INFO', module: 'nikita/lib/file/download'
-      @call ->
-        log message: "Unstage downloaded file", level: 'DEBUG', module: 'nikita/lib/file/download'
-        @system.move
-          if: @status()
+        match = hash_source is hash_target
+        log if match
+        then message: "Hash matches as '#{hash_source}'", level: 'INFO', module: 'nikita/lib/file/download' 
+        else message: "Hash dont match, source is '#{hash_source}' and target is '#{hash_target}'", level: 'WARN', module: 'nikita/lib/file/download'
+        status = not match
+        if status
+          @fs.mkdir
+            shy: true
+            target: path.dirname stageDestination
+          try
+            @fs.base.createWriteStream
+              target: stageDestination
+              stream: (ws) ->
+                rs = fs.createReadStream config.source
+                rs.pipe ws
+            log message: "Downloaded local source #{JSON.stringify config.source} to remote target #{JSON.stringify stageDestination}", level: 'INFO', module: 'nikita/lib/file/download'
+          catch err
+            log message: "Downloaded local source #{JSON.stringify config.source} to remote target #{JSON.stringify stageDestination} failed", level: 'ERROR', module: 'nikita/lib/file/download'
+      log message: "Unstage downloaded file", level: 'DEBUG', module: 'nikita/lib/file/download'
+      if status
+        @fs.move
           source: stageDestination
           target: config.target
-        @system.chmod
-          if: config.mode?
-          target: config.target
-          mode: config.mode
-        @system.chown
-          if: config.uid? or config.gid?
-          target: config.target
-          uid: config.uid
-          gid: config.gid
+      @fs.chmod
+        if: config.mode?
+        target: config.target
+        mode: config.mode
+      @fs.chown
+        if: config.uid? or config.gid?
+        target: config.target
+        uid: config.uid
+        gid: config.gid
+      {}
 
 ## Exports
 

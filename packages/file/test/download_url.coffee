@@ -20,7 +20,7 @@ describe 'file.download url', ->
     server.close()
     server.on 'close', next
 
-  they.only 'download without cache and md5', ({ssh}) ->
+  they 'download without cache and md5', ({ssh}) ->
     @timeout 100000
     # Download a non existing file
     nikita
@@ -66,6 +66,7 @@ describe 'file.download url', ->
         @file.download
           source: 'http://localhost:12345'
           target: "#{tmpdir}/target"
+          cache: true
           cache_file: "#{tmpdir}/cache_file"
         .should.be.resolvedWith status: true
         @fs.assert
@@ -78,45 +79,47 @@ describe 'file.download url', ->
     they 'cache file defined globally', ({ssh}) ->
       @timeout 100000
       # Download a non existing file
-      source = 'http://localhost:12345'
-      target = "#{tmpdir}/download"
-      cache = "#{tmpdir}/cache_file"
-      nikita(cache_file: cache) ->
+      nikita
+        tmpdir: true
+        cache_file: "#{tmpdir}/cache_file"
+      , ({metadata: {tmpdir}}) ->
         @file.download
           ssh: ssh
-          source: source
-          target: target
+          source: 'http://localhost:12345'
+          target: "#{tmpdir}/download"
         .should.be.resolvedWith status: true
         @fs.assert
           ssh: null
-          target: cache
+          target: "#{tmpdir}/download"
           content: 'okay'
 
     they 'cache dir', ({ssh}) ->
       @timeout 100000
       # Download a non existing file
-      source = 'http://localhost:12345'
-      target = "#{tmpdir}/download"
       nikita
-      @file.download
-        ssh: ssh
-        source: source
-        target: target
-        cache_dir: "#{tmpdir}/cache_dir"
-      .should.be.resolvedWith status: true
-      @fs.assert
-        ssh: null
-        target: "#{tmpdir}/cache_dir/localhost:12345"
+        tmpdir: true
+      , ({metadata: {tmpdir}}) ->
+        @file.download
+          ssh: ssh
+          source: 'http://localhost:12345'
+          target: "#{tmpdir}/download"
+          cache: true
+          cache_dir: "#{tmpdir}/cache_dir"
+        .should.be.resolvedWith status: true
+        @fs.assert
+          ssh: null
+          target: "#{tmpdir}/cache_dir/localhost:12345"
 
   describe 'md5', ->
 
     they 'use shortcircuit if target match md5', ({ssh}) ->
-      logs = []
       nikita
         ssh: ssh
         tmpdir: true
       , ({metadata: {tmpdir}}) ->
-        .on 'text', (log) -> logs.push "[#{log.level}] #{log.message}"
+        @log.fs
+          basedir: tmpdir
+          serializer: text: (log) -> "[#{log.level}] #{log.message}\n"
         @file
           content: 'okay'
           target: "#{tmpdir}/target"
@@ -125,11 +128,12 @@ describe 'file.download url', ->
           target: "#{tmpdir}/target"
           md5: 'df8fede7ff71608e24a5576326e41c75'
         .should.be.resolvedWith status: false
-        .call ->
-          ("[INFO] Destination with valid signature, download aborted" in logs).should.be.true()
+        logs = await @fs.base.readFile
+          target: "#{tmpdir}/localhost.log"
+          encoding: 'utf8'
+        (logs.includes "[INFO] Destination with valid signature, download aborted").should.be.true()
 
     they 'bypass shortcircuit if target dont match md5', ({ssh}) ->
-      logs = []
       nikita
         ssh: ssh
         tmpdir: true
@@ -161,12 +165,14 @@ describe 'file.download url', ->
     they 'count 1 if new file has correct checksum', ({ssh}) ->
       # Download with invalid checksum
       nikita
-      @file.download
-        ssh: ssh
-        source: 'http://localhost:12345'
-        target: "#{tmpdir}/check_md5"
-        md5: 'df8fede7ff71608e24a5576326e41c75'
-      .should.be.resolvedWith status: true
+        tmpdir: true
+      , ({metadata: {tmpdir}}) ->
+        @file.download
+          ssh: ssh
+          source: 'http://localhost:12345'
+          target: "#{tmpdir}/check_md5"
+          md5: 'df8fede7ff71608e24a5576326e41c75'
+        .should.be.resolvedWith status: true
 
     they 'count 0 if a file exist with same checksum', ({ssh}) ->
       # Download with invalid checksum

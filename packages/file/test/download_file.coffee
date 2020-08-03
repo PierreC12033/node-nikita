@@ -54,7 +54,7 @@ describe 'file.download file', ->
         @file.download
           source: "#{__dirname}/doesnotexists"
           target: "#{tmpdir}/download_test"
-        .should.be.rejectedWith message: "Missing File: no file exists for target \"#{__dirname}/doesnotexists\""
+        .should.be.rejectedWith message: "NIKITA_FS_STAT_TARGET_ENOENT: failed to stat the target, no file exists for target, got \"#{__dirname}/doesnotexists\""
 
     they 'into an existing directory', ({ssh}) ->
       nikita
@@ -73,7 +73,6 @@ describe 'file.download file', ->
 
     they 'validate md5', ({ssh}) ->
       source = "#{__dirname}/download.zip"
-      target = "#{tmpdir}/download"
       nikita
         tmpdir: true
       , ({metadata: {tmpdir}}) ->
@@ -156,14 +155,14 @@ describe 'file.download file', ->
           content: 'okay'
 
     they 'is computed if true', ({ssh}) ->
-      # return @skip() unless ssh
-      logs = []
       # Download with invalid checksum
       nikita
         ssh: ssh
         tmpdir: true
       , ({metadata: {tmpdir}}) ->
-        .on 'text', (log) -> logs.push "[#{log.level}] #{log.message}"
+        @log.fs
+          basedir: tmpdir
+          serializer: text: (log) -> "[#{log.level}] #{log.message}\n"
         @file
           target: "#{tmpdir}/source"
           content: "okay"
@@ -177,9 +176,11 @@ describe 'file.download file', ->
           target: "#{tmpdir}/check_md5"
           md5: true
         .should.be.resolvedWith status: false
-        .call ->
-          ("[WARN] Hash dont match, source is 'df8fede7ff71608e24a5576326e41c75' and target is 'undefined'" in logs).should.be.true()
-          ("[INFO] Hash matches as 'df8fede7ff71608e24a5576326e41c75'" in logs).should.be.true()
+        logs = await @fs.base.readFile
+          target: "#{tmpdir}/localhost.log"
+          encoding: 'utf8'
+        (logs.includes "[WARN] Hash dont match, source is 'df8fede7ff71608e24a5576326e41c75' and target is 'null'").should.be.true()
+        (logs.includes "[INFO] Hash matches as 'df8fede7ff71608e24a5576326e41c75'").should.be.true()
       
   describe 'error', ->
 
