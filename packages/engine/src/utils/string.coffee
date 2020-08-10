@@ -136,8 +136,4 @@ module.exports =
 # nunjucks = require 'nunjucks/src/environment'
 quote = require 'regexp-quote'
 crypto = require 'crypto'
-<<<<<<< HEAD
 handlebars = require 'handlebars'
-=======
-mustache = require 'mustache'
->>>>>>> 303c740b... file: render and cache

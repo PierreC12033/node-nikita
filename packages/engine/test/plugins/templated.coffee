@@ -1,5 +1,6 @@
 
 nikita = require '../../src'
+templated = require 'self-templated'
 
 describe 'plugins.templated', ->
 
@@ -12,7 +13,7 @@ describe 'plugins.templated', ->
     .should.be.finally.containEql
       key_1: 'value 1'
       key_2: 'value 2 and value 1'
-  
+
   it 'access parent', ->
     nikita
       key: 'value'

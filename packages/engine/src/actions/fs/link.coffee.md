@@ -110,15 +110,9 @@ require('nikita').fs.link({
 
     module.exports =
       handler: handler
-<<<<<<< HEAD
       hooks:
         on_action: on_action
       schema: schema
-=======
-      # hooks:
-      #   on_action: on_action
-      # schema: schema
->>>>>>> test: ensure tests are working on linux
 
 ## Dependencies
 

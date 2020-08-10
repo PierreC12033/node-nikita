@@ -7,7 +7,7 @@ return unless tags.posix
 
 describe 'file.ini', ->
 
-  they.only 'stringify an object', ({ssh}) ->
+  they 'stringify an object', ({ssh}) ->
     nikita
       ssh: ssh
       tmpdir: true

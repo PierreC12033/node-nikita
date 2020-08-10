@@ -15,17 +15,10 @@ describe 'file.render', ->
         tmpdir: true
       , ({metadata: {tmpdir}}) ->
         @file.render
-<<<<<<< HEAD
           source: "#{tmpdir}/oups.hbs"
           target: "#{tmpdir}/output"
           context: {}
         .should.be.rejectedWith message: "NIKITA_FS_CRS_TARGET_ENOENT: fail to read a file because it does not exist, location is \"#{tmpdir}/oups.hbs\"."
-=======
-          source: "#{tmpdir}/oups.mustache"
-          target: "#{tmpdir}/output"
-          context: {}
-        .should.be.rejectedWith message: "NIKITA_FS_CRS_TARGET_ENOENT: fail to read a file because it does not exist, location is \"#{tmpdir}/oups.mustache\"."
->>>>>>> c3847c77... file: render and other minor refactoring
 
     they 'when option "context" is missing', ({ssh}) ->
       nikita
@@ -48,11 +41,7 @@ describe 'file.render', ->
           context: {}
         .should.be.rejectedWith message: "Invalid Option: extension '.et' is not supported" 
 
-<<<<<<< HEAD
   describe 'handlebars', ->
-=======
-  describe 'mustache', ->
->>>>>>> c3847c77... file: render and other minor refactoring
 
     they 'detect `source`', ({ssh}) ->
       nikita
@@ -60,19 +49,11 @@ describe 'file.render', ->
         tmpdir: true
       , ({metadata: {tmpdir}}) ->
         @fs.base.writeFile
-<<<<<<< HEAD
           target: "#{tmpdir}/source.hbs"
           content: 'Hello {{ who }}'
           templated: false
         @file.render
           source: "#{tmpdir}/source.hbs"
-=======
-          target: "#{tmpdir}/source.mustache"
-          content: 'Hello {{ who }}'
-          templated: false
-        @file.render
-          source: "#{tmpdir}/source.mustache"
->>>>>>> c3847c77... file: render and other minor refactoring
           target: "#{tmpdir}/target.txt"
           context: who: 'you'
           templated: false
@@ -87,19 +68,11 @@ describe 'file.render', ->
         tmpdir: true
       , ({metadata: {tmpdir}}) ->
         @fs.base.writeFile
-<<<<<<< HEAD
           target: "#{tmpdir}/source.hbs"
           content: 'Hello "{{ who }}" \'{{ anInt }}\''
           templated: false
         @file.render
           source: "#{tmpdir}/source.hbs"
-=======
-          target: "#{tmpdir}/source.mustache"
-          content: 'Hello "{{ who }}" \'{{ anInt }}\''
-          templated: false
-        @file.render
-          source: "#{tmpdir}/source.mustache"
->>>>>>> c3847c77... file: render and other minor refactoring
           target: "#{tmpdir}/target.txt"
           context:
             who: 'you'

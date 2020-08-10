@@ -93,8 +93,6 @@ require('nikita')
 ## Schema
 
     schema =
-      # name: '@nikitajs/core/lib/file/ini'
-      # $ref: '@nikitajs/core/lib/file'
       type: 'object'
       properties:
         'clean': type: 'boolean'
