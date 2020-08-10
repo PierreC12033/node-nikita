@@ -8,8 +8,8 @@ module.exports =
     '': '@nikitajs/file/src'
     cache: '@nikitajs/file/src/cache'
     cson: '@nikitajs/file/src/cson'
-    # download: '@nikitajs/file/src/download'
-    # ini: '@nikitajs/file/src/ini'
+    download: '@nikitajs/file/src/download'
+    ini: '@nikitajs/file/src/ini'
     json: '@nikitajs/file/src/json'
     # properties:
     #   '': '@nikitajs/file/src/properties'
